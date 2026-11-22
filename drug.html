@@ -1,1 +1,54 @@
-
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mbire RDC - Drug Distribution System</title>
+<style>
+body{font-family:Arial;margin:0;background:#f0f2f5;text-align:center}
+header{background:#fff;padding:20px}header h1{margin:0;font-size:24px}
+.btn{background:#2f5d4a;color:#fff;border:0;padding:13px 16px;border-radius:10px;font-size:15px;cursor:pointer;margin:5px}
+.card{background:#fff;margin:12px;padding:16px;border-radius:12px;text-align:left}
+label{font-weight:bold;display:block;margin-top:12px}select,input{width:100%;padding:12px;margin-top:5px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}
+table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;font-size:14px}
+.hidden{display:none}.route{background:#2f5d4a;color:#fff;padding:12px;border-radius:10px;margin:5px;display:inline-block;cursor:pointer}
+</style></head>
+<body>
+<header><h1>Welcome To Mbire RDC</h1><p>Drug Distribution System</p><p>Select your option</p></header>
+<div>
+<button class="btn" onclick="showPage('enter')">Enter Data</button>
+<button class="btn" onclick="showPage('view')">View Transaction</button>
+<button class="btn" onclick="showPage('summary')">Summarised Data</button>
+</div>
+<div id="page-enter" class="card">
+<h2 style="text-align:center">Enter Data - Select Option</h2>
+<div style="text-align:center">
+<div class="route" onclick="pickRoute('1 - Natpharm to Clinics')">1 - Natpharm to Clinics</div>
+<div class="route" onclick="pickRoute('2 - Chitsungo to Clinics')">2 - Chitsungo to Clinics</div>
+<div class="route" onclick="pickRoute('3 - Natpharm to Chitsungo')">3 - Natpharm to Chitsungo</div>
+<div class="route" onclick="pickRoute('4 - Clinic to Clinic')">4 - Clinic to Clinic</div>
+</div>
+<div id="formArea" class="hidden">
+<h3 id="routeTitle">Route</h3>
+<label>From</label><input id="from" readonly>
+<label>To Clinic</label><select id="toClinic"><option>Mushumbi Clinic</option><option>Chitsungo Clinic</option><option>Kanyemba Clinic</option><option>Angwa Clinic</option><option>Mahuhwe Clinic</option><option>Mbire Hospital</option></select>
+<label>Drug Name</label><select id="drug"><option>Rifampicin 300mg</option><option>Isoniazid 300mg</option><option>Ethambutol 400mg</option><option>Pyrazinamide 500mg</option><option>Amoxicillin 500mg</option><option>Paracetamol 500mg</option><option>Co-trimoxazole 480mg</option></select>
+<label>Batch Number</label><input id="batch" placeholder="e.g. B123">
+<label>Quantity</label><input type="number" id="qty" placeholder="e.g. 100">
+<label>Select Time</label><select id="time"><option>Morning</option><option>Afternoon</option><option>Evening</option></select>
+<label>Pick Date</label><input type="date" id="date">
+<label>Delivered By</label><input id="by" placeholder="Your name">
+<button class="btn" style="width:100%;margin-top:15px;background:#0b6b3a" onclick="saveData()">SAVE DATA TO DATABASE</button>
+<p id="msg" style="color:green;font-weight:bold"></p>
+</div></div>
+<div id="page-view" class="card hidden"><h2>View Transaction</h2>
+<label>Filter by Clinic</label><select id="fClinic" onchange="viewData()"><option>All Clinics</option><option>Mushumbi Clinic</option><option>Chitsungo Clinic</option><option>Kanyemba Clinic</option><option>Angwa Clinic</option><option>Mahuhwe Clinic</option><option>Mbire Hospital</option></select>
+<label>Filter by Date</label><input type="date" id="fDate" onchange="viewData()"><div id="viewOut"></div>
+<button class="btn" onclick="clearDB()">Clear All Data</button></div>
+<div id="page-summary" class="card hidden"><h2>Summarised Data</h2><div id="sumOut"></div></div>
+<script>
+let DB=JSON.parse(localStorage.getItem('drug_db')||'[]');let currentRoute='';
+function showPage(p){['enter','view','summary'].forEach(x=>document.getElementById('page-'+x).classList.add('hidden'));document.getElementById('page-'+p).classList.remove('hidden');if(p=='view')viewData();if(p=='summary')showSummary();}
+function pickRoute(r){currentRoute=r;document.getElementById('routeTitle').textContent=r;document.getElementById('formArea').classList.remove('hidden');let f=document.getElementById('from');if(r.includes('Natpharm to Clinics'))f.value='Natpharm';if(r.includes('Chitsungo to Clinics'))f.value='Chitsungo District Hospital';if(r.includes('Natpharm to Chitsungo')){f.value='Natpharm';document.getElementById('toClinic').value='Chitsungo Clinic';}if(r.includes('Clinic to Clinic'))f.value='Clinic';}
+function saveData(){if(!currentRoute){alert('First click a Route e.g. 1 - Natpharm to Clinics');return;}if(!qty.value||!date.value){alert('Please enter Quantity and Date!');return;}let rec={route:currentRoute,from:from.value,to:toClinic.value,drug:drug.value,batch:batch.value,qty:Number(qty.value),time:time.value,date:date.value,by:by.value};DB.push(rec);localStorage.setItem('drug_db',JSON.stringify(DB));msg.textContent='SAVED! '+rec.drug+' - '+rec.qty+' from '+rec.from+' to '+rec.to;qty.value='';batch.value='';alert('SAVED TO DATABASE! '+rec.drug+''+rec.qty+''+rec.from+' ->'+rec.to);}
+function viewData(){let f=DB.filter(x=>(fClinic.value=='All Clinics'||x.to==fClinic.value)&&(!fDate.value||x.date==fDate.value));if(f.length==0){viewOut.innerHTML='<p>No transactions yet. Click Enter Data and Save first.</p>';return;}let h='<table><tr><th>Route</th><th>Drug</th><th>Qty</th><th>From to To</th><th>Date</th></tr>';f.forEach(r=>h+='<tr><td>'+r.route+'</td><td>'+r.drug+'</td><td>'+r.qty+'</td><td>'+r.from+' to '+r.to+'</td><td>'+r.date+''+r.time+'</td></tr>');viewOut.innerHTML=h+'</table><p><b>Total: '+f.length+' transactions, '+f.reduce((a,b)=>a+b.qty,0)+' units</b></p>';}
+function showSummary(){if(DB.length==0){sumOut.innerHTML='<p>No data yet.</p>';return;}let byRoute={},byDrug={},byClinic={};DB.forEach(r=>{byRoute[r.route]=(byRoute[r.route]||0)+r.qty;byDrug[r.drug]=(byDrug[r.drug]||0)+r.qty;byClinic[r.to]=(byClinic[r.to]||0)+r.qty;});let h='<h3>By Route</h3><table>';for(let k in byRoute)h+='<tr><td>'+k+'</td><td><b>'+byRoute[k]+'</b></td></tr>';h+='</table><h3>By Clinic Received</h3><table>';for(let k in byClinic)h+='<tr><td>'+k+'</td><td><b>'+byClinic[k]+'</b></td></tr>';h+='</table><h3>By Drug</h3><table>';for(let k in byDrug)h+='<tr><td>'+k+'</td><td><b>'+byDrug[k]+'</b></td></tr>';sumOut.innerHTML=h+'</table><p><b>Grand Total: '+DB.length+' transactions</b></p>';}
+function clearDB(){if(confirm('Delete all?')){DB=[];localStorage.removeItem('drug_db');viewData();}}
+</script></body></html>
